@@ -207,13 +207,27 @@ class OnPreLogin {
         // 白名单检查
         final PaperWhitelistApi api = this.plugin.getPaperWhitelistApi();
         if (api != null) {
-            api.onPreLoginCheck(event, null);
+            final TextComponent.Builder text = Component.text();
+            text.append(Component.text("您可以登录官网："));
+//            text.appendNewline();
+            text.append(Component.text("paper-card.cn").decorate(TextDecoration.UNDERLINED));
+//            text.appendNewline();
+            text.append(Component.text(" 自助申请白名单噢~"));
+
+            final TextComponent msg = text.build().color(NamedTextColor.GREEN);
+
+            api.onPreLoginCheck(event, msg);
+            if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
         }
 
         // disallow all
         final DisallowAllApi disallowAllApi = this.plugin.getDisallowAllApi();
         if (disallowAllApi != null) {
             disallowAllApi.onPreLoginCheck(event);
+            if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
         }
+
+        // 全部检查通过
+        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.ALLOWED);
     }
 }
