@@ -1,26 +1,24 @@
 package cn.paper_card.paper_pre_login;
 
+import cn.paper_card.ban.api.PaperBanApi;
 import cn.paper_card.disallow_all.DisallowAllApi;
-import cn.paper_card.little_skin_login.api.LittleSkinLoginApi;
 import cn.paper_card.paper_card_auth.api.PaperCardAuthApi;
-import cn.paper_card.paper_card_ban.api.PaperCardBanApi;
-import cn.paper_card.paper_login.api.PaperSkinLoginApi;
 import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
-import cn.paper_card.qq_group_access.api.GroupAccess;
-import cn.paper_card.qq_group_access.api.QqGroupAccessApi;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.util.UUID;
 
 class OnPreLogin {
     private final @NotNull PluginMain plugin;
+
 
     OnPreLogin(@NotNull PluginMain plugin) {
         this.plugin = plugin;
@@ -52,41 +50,6 @@ class OnPreLogin {
         event.kickMessage(text.build());
     }
 
-    private @Nullable GroupAccess getMainGroupAccessOrNull(@NotNull QqGroupAccessApi groupAccessApi) {
-        try {
-            return groupAccessApi.createMainGroupAccess();
-        } catch (Exception e) {
-            this.plugin.getSLF4JLogger().warn(e.toString());
-            return null;
-        }
-    }
-
-    private boolean checkBanAndReport(@NotNull AsyncPlayerPreLoginEvent event, @NotNull UUID uuid, @NotNull String name) throws Exception {
-        final PaperCardBanApi api = this.plugin.getPaperCardBanApi();
-
-        if (api == null) return false;
-
-        // 检查封禁
-        final Object kickMessage = api.checkPlayerBanned(uuid, name);
-
-        if (kickMessage != null) {
-            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
-            event.kickMessage((Component) kickMessage);
-            return true;
-        }
-
-        // 检查举报
-        final Object kickMessage2 = api.checkPlayerReported(uuid, name);
-
-        if (kickMessage2 != null) {
-            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_BANNED);
-            event.kickMessage((Component) kickMessage2);
-            return true;
-        }
-
-        return false;
-    }
-
     void on(@NotNull AsyncPlayerPreLoginEvent event) {
         try {
             this.on0(event);
@@ -96,40 +59,75 @@ class OnPreLogin {
         }
     }
 
-    private void on0(@NotNull AsyncPlayerPreLoginEvent event) throws Exception {
+    private void checkError(@NotNull AsyncPlayerPreLoginEvent event) {
+
+        final PlayerProfile profile = event.getPlayerProfile();
+
+        String title = null;
+        String detail = null;
+
+        for (ProfileProperty property : profile.getProperties()) {
+            final String name = property.getName();
+            if ("error-title".equals(name)) {
+                title = property.getValue();
+            } else if ("error-detail".equals(name)) {
+                detail = property.getValue();
+            }
+
+            if (title != null && detail != null) break;
+        }
+
+        if (title == null && detail == null) {
+            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.ALLOWED);
+            return;
+        }
+
+        event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_OTHER);
+        event.kickMessage(Component.text()
+                .append(Component.text(title != null ? title : "NO_TITLE").color(NamedTextColor.DARK_RED))
+                .appendNewline()
+                .append(Component.text(detail != null ? detail : "NO_DETAIL").color(NamedTextColor.RED))
+                .build());
+    }
+
+    private void on0(@NotNull AsyncPlayerPreLoginEvent event) {
 
         this.plugin.getSLF4JLogger().info("onPreLogin {name: %s, uuid: %s}".formatted(
                 event.getName(), event.getUniqueId()
         ));
 
         // 检查LittleSkin未绑定登录
-        {
-            LittleSkinLoginApi api = null;
-            try {
-                api = this.plugin.getLittleSkinLoginApi();
-            } catch (NoClassDefFoundError ignored) {
-            }
-            if (api != null) {
-                api.onPreLoginCheckNotBind(event);
-                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
-            }
-        }
+        //        {
+        //            LittleSkinLoginApi api = null;
+        //            try {
+//                    api = this.plugin.getLittleSkinLoginApi();
+//            } catch (NoClassDefFoundError ignored) {
+//            }
+//            if (api != null) {
+//                api.onPreLoginCheckNotBind(event);
+//                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
+//            }
+//        }
 
 
         // 检查PaperSkin未绑定登录
-        {
-            PaperSkinLoginApi api = null;
+//        {
+//            PaperSkinLoginApi api = null;
+//
+//            try {
+//                api = this.plugin.getPaperSkinLoginApi();
+//            } catch (NoClassDefFoundError ignored) {
+//            }
+//
+//            if (api != null) {
+//                api.onPreLoginCheckNotBind(event);
+//                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
+//            }
+//        }
 
-            try {
-                api = this.plugin.getPaperSkinLoginApi();
-            } catch (NoClassDefFoundError ignored) {
-            }
-
-            if (api != null) {
-                api.onPreLoginCheckNotBind(event);
-                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
-            }
-        }
+        // 检查错误
+        this.checkError(event);
+        if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
 
         // 检查无效UUID
         PaperCardAuthApi paperCardAuthApi = null;
@@ -139,33 +137,25 @@ class OnPreLogin {
         } catch (NoClassDefFoundError ignored) {
         }
 
-
         if (paperCardAuthApi != null) {
             paperCardAuthApi.onPreLoginCheckInvalid(event);
             if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
         }
 
 
-        final GroupAccess mainGroup;
-        {
-            final QqGroupAccessApi api = this.plugin.getQqGroupAccessApi();
-            if (api != null) {
-                mainGroup = getMainGroupAccessOrNull(api);
-            } else {
-                mainGroup = null;
-            }
-        }
+//        final GroupAccess mainGroup;
+//        {
+//            final QqGroupAccessApi api = this.plugin.getQqGroupAccessApi();
+//            if (api != null) {
+//                mainGroup = getMainGroupAccessOrNull(api);
+//            } else {
+//                mainGroup = null;
+//            }
+//        }
 
         // 检查离线正版验证
         if (paperCardAuthApi != null) {
-            paperCardAuthApi.onPreLoginCheckMojangOffline(event, mainGroup == null ? null : (qq, message) -> {
-                try {
-                    mainGroup.sendAtMessage(qq, message);
-                } catch (Exception e) {
-                    this.plugin.getSLF4JLogger().error("Fail to send qq message", e);
-                }
-            });
-
+            paperCardAuthApi.onPreLoginCheckMojangOffline(event, null);
             if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
         }
 
@@ -199,9 +189,17 @@ class OnPreLogin {
             });
         }
 
+        // 检查封禁和举报(新)
+        {
+            final PaperBanApi api = plugin.getPaperBanApi();
+            if (api != null) {
+                api.onPreLoginCheck(event);
+                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
+            }
+        }
 
         // 检查封禁和举报
-        if (this.checkBanAndReport(event, event.getUniqueId(), event.getName())) return;
+//        if (this.checkBanAndReport(event, event.getUniqueId(), event.getName())) return;
 
 
         // 白名单检查

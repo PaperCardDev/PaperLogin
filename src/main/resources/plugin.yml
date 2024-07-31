@@ -8,8 +8,6 @@ author: Paper99
 softdepend:
   - PaperWhitelist
   - PaperCardAuth
-  - PaperCardBan
   - DisallowAll
-  - QqGroupAccess
   - LittleSkinLogin
   - PaperLogin
