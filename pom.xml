@@ -6,7 +6,7 @@
 
     <groupId>cn.paper_card</groupId>
     <artifactId>PaperPreLogin</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
     <packaging>jar</packaging>
 
     <name>PaperPreLogin</name>
@@ -95,6 +95,13 @@
             <id>jitpack.io</id>
             <url>https://www.jitpack.io</url>
         </repository>
+
+
+        <repository>
+            <id>minebench-repo</id>
+            <url>https://repo.minebench.de/</url>
+        </repository>
+
     </repositories>
 
     <dependencies>
@@ -106,36 +113,22 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.PaperCardDev</groupId>
-            <artifactId>paper-whitelist-api</artifactId>
-            <version>4.2</version>
-            <scope>provided</scope>
+            <groupId>de.themoep</groupId>
+            <artifactId>minedown-adventure</artifactId>
+            <version>1.7.3-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>com.github.PaperCardDev</groupId>
-            <artifactId>paper-ban-api</artifactId>
-            <version>1.1</version>
+            <artifactId>paper-client-api</artifactId>
+            <version>1.7</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>cn.paper_card</groupId>
             <artifactId>DisallowAll</artifactId>
-            <version>1.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.PaperCardDev</groupId>
-            <artifactId>little-skin-login-api</artifactId>
-            <version>1.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.PaperCardDev</groupId>
-            <artifactId>paper-login-api</artifactId>
             <version>1.0</version>
             <scope>provided</scope>
         </dependency>

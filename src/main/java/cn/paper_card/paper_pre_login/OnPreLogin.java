@@ -1,11 +1,14 @@
 package cn.paper_card.paper_pre_login;
 
-import cn.paper_card.ban.api.PaperBanApi;
+import cn.paper_card.client.api.PaperClientApi;
+import cn.paper_card.client.api.PaperResponseError;
 import cn.paper_card.disallow_all.DisallowAllApi;
 import cn.paper_card.paper_card_auth.api.PaperCardAuthApi;
-import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import de.themoep.minedown.adventure.MineDown;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -13,6 +16,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.UUID;
 
@@ -189,34 +193,52 @@ class OnPreLogin {
             });
         }
 
-        // 检查封禁和举报(新)
+        // 生成登录弹窗（检查白名单和封禁）
+        final JsonElement respJson = this.getLoginPopup(event);
+
+        this.plugin.getSLF4JLogger().info(respJson.toString());
+
+        final JsonObject jsonObject = respJson.getAsJsonObject();
+        final JsonElement kickMessage = jsonObject.get("kick_message");
+
+                /*
         {
-            final PaperBanApi api = plugin.getPaperBanApi();
-            if (api != null) {
-                api.onPreLoginCheck(event);
-                if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
+        "ec": "ok",
+            "em": "ok",
+        "data": {
+            "whitelist": null,
+            "whitelist_check": true,
+            "ban": null,
+            "ban_check": true,
+            "kick_message": [
+                "[ 纸片白名单 ]",
+                "您未申请白名单，请先申请白名单",
+                "您可以登录官网: paper-card.cn 自助申请白名单噢~",
+                "游戏角色: Paper99 (20554467-84cb-4773-a084-e3cfa867d481)"
+            ]
+        }
+    }
+         */
+
+        if (kickMessage != null && !kickMessage.isJsonNull()) {
+            final TextComponent.Builder builder = Component.text();
+            int index = 0;
+            for (final JsonElement line : kickMessage.getAsJsonArray()) {
+                if (index > 0) {
+                    builder.appendNewline();
+                }
+
+                final String lineStr = line.getAsString();
+                builder.append(new MineDown(lineStr).toComponent());
+
+                ++index;
             }
+
+            event.kickMessage(builder.build());
+            event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST);
+            return;
         }
 
-        // 检查封禁和举报
-//        if (this.checkBanAndReport(event, event.getUniqueId(), event.getName())) return;
-
-
-        // 白名单检查
-        final PaperWhitelistApi api = this.plugin.getPaperWhitelistApi();
-        if (api != null) {
-            final TextComponent.Builder text = Component.text();
-            text.append(Component.text("您可以登录官网："));
-//            text.appendNewline();
-            text.append(Component.text("paper-card.cn").decorate(TextDecoration.UNDERLINED));
-//            text.appendNewline();
-            text.append(Component.text(" 自助申请白名单噢~"));
-
-            final TextComponent msg = text.build().color(NamedTextColor.GREEN);
-
-            api.onPreLoginCheck(event, msg);
-            if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
-        }
 
         // disallow all
         final DisallowAllApi disallowAllApi = this.plugin.getDisallowAllApi();
@@ -227,5 +249,26 @@ class OnPreLogin {
 
         // 全部检查通过
         event.setLoginResult(AsyncPlayerPreLoginEvent.Result.ALLOWED);
+    }
+
+    @NotNull
+    private JsonElement getLoginPopup(@NotNull AsyncPlayerPreLoginEvent event) {
+
+        final PaperClientApi clientApi = this.plugin.getPaperClientApi();
+        if (clientApi == null) {
+            throw new RuntimeException("PaperClientApi is null");
+        }
+
+        final JsonElement respJson;
+        try {
+            respJson = clientApi.getWithAuth("/popup/mc/login/" + event.getUniqueId() + "?name=" + event.getName());
+        } catch (PaperResponseError | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (respJson == null || respJson.isJsonNull()) {
+            throw new RuntimeException("resp json is null");
+        }
+        return respJson;
     }
 }

@@ -1,9 +1,8 @@
 package cn.paper_card.paper_pre_login;
 
-import cn.paper_card.ban.api.PaperBanApi;
+import cn.paper_card.client.api.PaperClientApi;
 import cn.paper_card.disallow_all.DisallowAllApi;
 import cn.paper_card.paper_card_auth.api.PaperCardAuthApi;
-import cn.paper_card.paper_whitelist.api.PaperWhitelistApi;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
 import org.bukkit.event.EventHandler;
@@ -17,15 +16,14 @@ import org.jetbrains.annotations.Nullable;
 
 public final class PluginMain extends JavaPlugin {
 
-    private PaperWhitelistApi paperWhitelistApi = null;
 
     private DisallowAllApi disallowAllApi = null;
 
     private PaperCardAuthApi paperCardAuthApi = null;
 
-//    private QqGroupAccessApi qqGroupAccessApi = null;
+    private PaperClientApi paperClientApi = null;
 
-    private PaperBanApi paperBanApi = null;
+//    private QqGroupAccessApi qqGroupAccessApi = null;
 
 
     private final @NotNull TaskScheduler taskScheduler;
@@ -42,11 +40,7 @@ public final class PluginMain extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        try {
-            this.paperWhitelistApi = this.getServer().getServicesManager().load(PaperWhitelistApi.class);
-        } catch (NoClassDefFoundError e) {
-            this.getSLF4JLogger().warn(e.toString());
-        }
+
 
         try {
             this.disallowAllApi = this.getDisallowAllApi0();
@@ -62,10 +56,11 @@ public final class PluginMain extends JavaPlugin {
 
 
         try {
-            this.paperBanApi = this.getServer().getServicesManager().load(PaperBanApi.class);
+            this.paperClientApi = this.getServer().getServicesManager().load(PaperClientApi.class);
         } catch (NoClassDefFoundError e) {
             this.getSLF4JLogger().warn(e.toString());
         }
+
 
         this.getServer().getPluginManager().registerEvents(new Listener() {
 
@@ -94,21 +89,16 @@ public final class PluginMain extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        this.paperWhitelistApi = null;
         this.disallowAllApi = null;
         this.paperCardAuthApi = null;
-//        this.qqGroupAccessApi = null;
-        this.paperBanApi = null;
+
+        this.paperClientApi = null;
 
         this.taskScheduler.cancelTasks(this);
     }
 
     @NotNull TaskScheduler getTaskScheduler() {
         return this.taskScheduler;
-    }
-
-    @Nullable PaperWhitelistApi getPaperWhitelistApi() {
-        return this.paperWhitelistApi;
     }
 
     @Nullable DisallowAllApi getDisallowAllApi() {
@@ -119,7 +109,7 @@ public final class PluginMain extends JavaPlugin {
         return this.paperCardAuthApi;
     }
 
-    @Nullable PaperBanApi getPaperBanApi() {
-        return this.paperBanApi;
+    @Nullable PaperClientApi getPaperClientApi() {
+        return this.paperClientApi;
     }
 }
