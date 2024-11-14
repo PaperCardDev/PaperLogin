@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.paper_card</groupId>
-    <artifactId>PaperPreLogin</artifactId>
-    <version>1.1</version>
+    <artifactId>PaperLogin</artifactId>
+    <version>1.2</version>
     <packaging>jar</packaging>
 
-    <name>PaperPreLogin</name>
+    <name>PaperLogin</name>
 
     <properties>
         <java.version>17</java.version>
