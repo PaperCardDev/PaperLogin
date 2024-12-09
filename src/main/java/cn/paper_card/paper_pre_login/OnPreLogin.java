@@ -235,6 +235,8 @@ class OnPreLogin {
             }
 
             event.kickMessage(builder.build());
+
+            // TODO: 应该让服务端返回类型
             event.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST);
             return;
         }
