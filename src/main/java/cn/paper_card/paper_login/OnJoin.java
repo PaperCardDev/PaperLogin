@@ -1,10 +1,8 @@
 package cn.paper_card.paper_login;
 
 import cn.paper_card.client.api.PaperClientApi;
-import cn.paper_card.client.api.PaperResponseError;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import de.themoep.minedown.adventure.MineDown;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
@@ -18,8 +16,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
 
 class OnJoin implements Listener {
 
@@ -38,33 +34,15 @@ class OnJoin implements Listener {
 
             if (!player.isOnline()) return;
 
-            JsonElement dataEle;
-            try {
-                dataEle = api.getWithAuth("/popup/mc/join/" + player.getUniqueId());
-            } catch (PaperResponseError | IOException e) {
-                this.plugin.getSLF4JLogger().error("fail to request /popup/mc/join/{uuid}: ", e);
-                return;
-            }
+            final JsonElement dataEle = PaperBookPopup.req(api, player, this.plugin.getSLF4JLogger());
+
+            final String bookMinedown = PaperBookPopup.bookMinedown(dataEle, this.plugin.getSLF4JLogger());
 
             // 没有弹窗
-            if (dataEle == null || dataEle.isJsonNull()) return;
-
-            String minedown;
-
-            try {
-                final JsonObject dataObj = dataEle.getAsJsonObject();
-                minedown = dataObj.get("book_minedown").getAsString();
-            } catch (Exception e) {
-                this.plugin.getSLF4JLogger().error("invalid data format: ", e);
-                return;
-            }
-
-            if (minedown == null || minedown.isEmpty()) return;
-
-            final String finalMinedown = minedown;
+            if (bookMinedown == null) return;
 
             this.plugin.getTaskScheduler().runTask(player, () -> {
-                final Component component = new MineDown(finalMinedown).toComponent();
+                final Component component = new MineDown(bookMinedown).toComponent();
                 final Book.Builder builder = Book.builder();
                 builder.addPage(component);
                 player.openBook(builder);
@@ -114,7 +92,7 @@ class OnJoin implements Listener {
         final PlayerProfile profile = player.getPlayerProfile();
 
         // 检查是否包含错误
-        final TextComponent kickMessage = OnPreLogin.checkProfileError(profile);
+        final TextComponent kickMessage = ErrorProfile.checkProfileError(profile);
 
         if (kickMessage == null) {
             this.showBookPopup(player);

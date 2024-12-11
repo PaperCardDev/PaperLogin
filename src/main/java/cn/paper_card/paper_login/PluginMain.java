@@ -46,7 +46,7 @@ public final class PluginMain extends JavaPlugin {
         try {
             this.paperClientApi = this.getServer().getServicesManager().load(PaperClientApi.class);
         } catch (NoClassDefFoundError e) {
-            throw new RuntimeException("fail to load paper client api: ", e);
+            this.getSLF4JLogger().warn("请安装PaperClientApi插件以使用完整功能");
         }
 
         try {
@@ -64,7 +64,7 @@ public final class PluginMain extends JavaPlugin {
                     new OnPreLogin(PluginMain.this).on(event);
                 } catch (Throwable e) {
                     getSLF4JLogger().error("", e);
-                    OnPreLogin.kickWhenException(event, e);
+                    Util.kickWhenException(event, e);
                 }
             }
         }, this);
