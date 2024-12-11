@@ -1,8 +1,7 @@
-package cn.paper_card.paper_pre_login;
+package cn.paper_card.paper_login;
 
 import cn.paper_card.client.api.PaperClientApi;
 import cn.paper_card.disallow_all.DisallowAllApi;
-import cn.paper_card.paper_card_auth.api.PaperCardAuthApi;
 import com.github.Anon8281.universalScheduler.UniversalScheduler;
 import com.github.Anon8281.universalScheduler.scheduling.schedulers.TaskScheduler;
 import org.bukkit.event.EventHandler;
@@ -14,17 +13,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PluginMain extends JavaPlugin {
+import java.lang.reflect.InvocationTargetException;
 
+public final class PluginMain extends JavaPlugin {
 
     private DisallowAllApi disallowAllApi = null;
 
-    private PaperCardAuthApi paperCardAuthApi = null;
-
     private PaperClientApi paperClientApi = null;
-
-//    private QqGroupAccessApi qqGroupAccessApi = null;
-
 
     private final @NotNull TaskScheduler taskScheduler;
 
@@ -40,25 +35,24 @@ public final class PluginMain extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
-
         try {
-            this.disallowAllApi = this.getDisallowAllApi0();
-        } catch (NoClassDefFoundError e) {
-            this.getSLF4JLogger().warn(e.toString());
-        }
+            new SessionServiceReplacer(this).doReplace();
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException |
+                 NoSuchFieldException | InstantiationException e) {
 
-        try {
-            this.paperCardAuthApi = this.getServer().getServicesManager().load(PaperCardAuthApi.class);
-        } catch (NoClassDefFoundError e) {
-            this.getSLF4JLogger().warn(e.toString());
+            throw new RuntimeException("fail to replace session service: ", e);
         }
-
 
         try {
             this.paperClientApi = this.getServer().getServicesManager().load(PaperClientApi.class);
         } catch (NoClassDefFoundError e) {
-            this.getSLF4JLogger().warn(e.toString());
+            throw new RuntimeException("fail to load paper client api: ", e);
+        }
+
+        try {
+            this.disallowAllApi = this.getDisallowAllApi0();
+        } catch (NoClassDefFoundError e) {
+            this.getSLF4JLogger().info("no disallow all api: " + e);
         }
 
 
@@ -90,7 +84,6 @@ public final class PluginMain extends JavaPlugin {
     @Override
     public void onDisable() {
         this.disallowAllApi = null;
-        this.paperCardAuthApi = null;
 
         this.paperClientApi = null;
 
@@ -103,10 +96,6 @@ public final class PluginMain extends JavaPlugin {
 
     @Nullable DisallowAllApi getDisallowAllApi() {
         return this.disallowAllApi;
-    }
-
-    @Nullable PaperCardAuthApi getPaperCardAuthApi() {
-        return this.paperCardAuthApi;
     }
 
     @Nullable PaperClientApi getPaperClientApi() {

@@ -1,9 +1,12 @@
 name: PaperLogin
 version: '${project.version}'
-main: cn.paper_card.paper_pre_login.PluginMain
+main: cn.paper_card.paper_login.PluginMain
 api-version: '1.20'
 folia-supported: true
 author: Paper99
+
+depend:
+  - PaperClient
 
 softdepend:
   - DisallowAll
