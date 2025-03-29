@@ -184,7 +184,7 @@ class SessionServiceInvocationHandler implements InvocationHandler {
     @NotNull
     private static HttpURLConnection getHttpURLConnection(@NotNull String userName, @NotNull String serverId, @Nullable InetAddress ip) throws IOException {
         final StringBuilder sb = new StringBuilder();
-        sb.append("https://api.paper-card.cn/ygg");
+        sb.append("https://api.zpian.top/ygg");
         sb.append("/sessionserver/session/minecraft/hasJoined");
         sb.append("?serverId=");
         sb.append(serverId);

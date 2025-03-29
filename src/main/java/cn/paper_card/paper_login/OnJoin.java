@@ -66,7 +66,7 @@ class OnJoin implements Listener {
                         .append(Component.text().append(player.displayName()).build().color(NamedTextColor.WHITE))
                         .append(Component.text(" 使用 "))
                         .append(Component.text("[纸片正版登录]").color(NamedTextColor.GOLD)
-                                .decorate(TextDecoration.UNDERLINED).clickEvent(ClickEvent.openUrl("https://paper-card.cn/yggdrasil")))
+                                .decorate(TextDecoration.UNDERLINED).clickEvent(ClickEvent.openUrl("https://zpian.top/yggdrasil")))
                         .append(Component.text(" ~"))
                         .build()
                         .color(NamedTextColor.GRAY));
