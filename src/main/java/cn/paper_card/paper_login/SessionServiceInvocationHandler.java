@@ -1,5 +1,6 @@
 package cn.paper_card.paper_login;
 
+import cn.paper_card.client.api.PaperClientApi;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -182,9 +183,18 @@ class SessionServiceInvocationHandler implements InvocationHandler {
     }
 
     @NotNull
-    private static HttpURLConnection getHttpURLConnection(@NotNull String userName, @NotNull String serverId, @Nullable InetAddress ip) throws IOException {
+    private HttpURLConnection getHttpURLConnection(@NotNull String userName, @NotNull String serverId, @Nullable InetAddress ip) throws IOException {
+
+        String apiBase = "https://api.zpian.top";
+
+        final PaperClientApi api = this.plugin.getPaperClientApi();
+        if (api != null) {
+            apiBase = api.getApiBase();
+        }
+
         final StringBuilder sb = new StringBuilder();
-        sb.append("https://api.zpian.top/ygg");
+        sb.append(apiBase);
+        sb.append("/ygg");
         sb.append("/sessionserver/session/minecraft/hasJoined");
         sb.append("?serverId=");
         sb.append(serverId);
